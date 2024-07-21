@@ -1,8 +1,3 @@
-const canvas = document.querySelector("canvas");
-canvas.width = window.innerWidth-4;
-canvas.height = window.innerHeight-4;
-const ctx = canvas.getContext("2d");
-
 class Player{
     constructor(x, y, w, h){
         this.xPos = x;
@@ -19,7 +14,6 @@ class Player{
         ctx.stroke();
     }
     mouseMove = (pos) => {
-        console.log(this.xPos);
         this.xPos = pos - this.width/2;
         if(this.xPos < 0) this.xPos = 0; 
         if(this.xPos > canvas.width - this.width) this.xPos = canvas.width - this.width;
@@ -64,7 +58,7 @@ class Ball{
     move = () => {
         this.yPos += this.yv;
         this.xPos += this.xv;
-        if(this.yPos+this.radius+10 >= player.yPos && this.yPos+this.radius+10 <= player.yPos+10 && this.xPos >= player.xPos-10 && this.xPos < player.xPos + player.width+10){
+        if((this.yPos+this.radius+10 >= player.yPos && this.yPos+this.radius+10 <= player.yPos+10) && (this.xPos >= player.xPos-10 && this.xPos <= player.xPos + 220)){
             if(this.xPos >= player.xPos && this.xPos < player.xPos+(player.width*0.05)){
                 this.yv = 10;
                 this.xv = -9; 
@@ -142,6 +136,7 @@ class Ball{
                 this.xv = 9;
             }
             this.yv = -this.yv;
+            bounces.update();
         }
         if(this.yPos >= canvas.height) this.miss = true;
 
@@ -156,34 +151,57 @@ class Ball{
         }
     }
 }
+class Bounces {
+    constructor(){
+        this.bounces = 0;
+    }
+    render = () => {
+        ctx.font = "100px Arial"
+        ctx.fillText(this.format(), canvas.width - 300, 150);
+    }
+    update = () => this.bounces++; 
+    format = () => {
+        if(this.bounces <= 9)
+            return "000" + this.bounces;
+        else if(this.bounces <= 99)
+            return "00" + this.bounces;
+        else if(this.bounces <= 999)
+            return "0" + this.bounces;
+        else return this.bounces;
+    }
+}
 
-window.addEventListener("mousemove", (e) => {
-    console.log(e);
-    if(balls.length != 0){
-        player.mouseMove(e.x);
-        player.render();
-    }
-})
-window.addEventListener("keydown", (e) => {
-    console.log(e);
-    if(e.key === "ArrowRight"){
-        player.keyboardMove(20);
-        player.render();
-    }
-    else if(e.key === "ArrowLeft"){
-        player.keyboardMove(-20);
-        player.render();
-    }
-})
-
-const player = new Player(canvas.width/2-75, canvas.height-50, 200, 25);
+const canvas = document.querySelector("canvas");
+canvas.width = window.innerWidth-4;
+canvas.height = window.innerHeight-4;
+const ctx = canvas.getContext("2d");
+const player = new Player(canvas.width/2-75, canvas.height-50, 300, 25);
 let balls = [];
-window.addEventListener("mousedown", (e) => {
-    const ball = new Ball(e.x, e.y, 25);
-    balls.push(ball);
-})
-for(let i = 0; i < 20; i++){
-    let cube = new Cube()
+const bounces = new Bounces();
+const settings = document.createElement("div");
+
+
+const init = () => {
+    openSettings()
+    animate();
+}
+
+const openSettings = () => {
+    const settings = document.createElement("div");
+    console.log(settings.style.display);
+    settings.style.height = window.innerHeight+"px";
+    settings.innerHTML = `
+        <p>Choose Size:</p>
+        <input type=number value=220></input>
+        <button>Start</button>
+    `;
+    settings.children[2].addEventListener("click", () => {
+        settings.remove();
+        player.width = settings.children[1].value;
+        
+    })
+    document.body.append(settings);
+
 }
 
 const animate = () => {
@@ -200,5 +218,33 @@ const animate = () => {
         balls[i].render();
         balls[i].move();
     }
+    bounces.render()
 }
-animate();
+
+canvas.addEventListener("mousemove", (e) => {
+    if(balls.length != 0){
+        player.mouseMove(e.x);
+        player.render();
+    }
+})
+
+window.addEventListener("keydown", (e) => {
+    if(e.key === "ArrowRight"){
+        player.keyboardMove(20);
+        player.render();
+    }
+    else if(e.key === "ArrowLeft"){
+        player.keyboardMove(-20);
+        player.render();
+    }
+    else if(e.key === "Escape"){
+        openSettings();
+    }
+})
+
+canvas.addEventListener("mousedown", (e) => {
+    const ball = new Ball(e.x, e.y, 25);
+    balls.push(ball);
+})
+
+init();
